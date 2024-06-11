@@ -36,13 +36,18 @@ def svm_loss_naive(W, X, y, reg):
             margin = scores[j] - correct_class_score + 1  # note delta = 1
             if margin > 0:
                 loss += margin
+                dW[:, j] += X[i]
+                dW[:, y[i]] -= X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
     loss /= num_train
+    dW /= num_train
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
+    dW += reg * 2 * W
+    
 
     #############################################################################
     # TODO:                                                                     #
@@ -76,8 +81,15 @@ def svm_loss_vectorized(W, X, y, reg):
     # result in loss.                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    N = X.shape[0]
+    # C = W.shape[1]
+    scores = X@W # N,C
+    correct_class_scores = scores[np.arange(N), y] # N,
+    # np.array_equal(np.expand_dims(correct_class_scores, axis=1),correct_class_scores[:, np.newaxis])
+    margins = np.maximum(0, scores - correct_class_scores[:, np.newaxis] + 1) # N x C
+    margins[np.arange(N), y] = 0 
+    loss = np.sum(margins) / N
+    loss += reg * np.sum(W**2)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -91,8 +103,11 @@ def svm_loss_vectorized(W, X, y, reg):
     # loss.                                                                     #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    binary = (margins > 0).astype(float)  # dW[:, j] += X[i]
+    binary[np.arange(N), y] = -np.sum(binary, axis=1) # dW[:, y[i]] -= X[i]
+    dW = X.T@binary / N
+    dW += 2 * reg * W
+    
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
