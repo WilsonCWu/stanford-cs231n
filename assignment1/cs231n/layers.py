@@ -27,8 +27,9 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    N = x.shape[0]
+    x_reshaped = x.reshape(N, -1)
+    out = x_reshaped.dot(w)+b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -60,8 +61,15 @@ def affine_backward(dout, cache):
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    # dout N,M
+    # x_reshaped = N, D
+    # w = D,M
+    # b = M
+    N = x.shape[0]
+    x_reshaped = x.reshape(N, -1)
+    dx = dout.dot(w.T).reshape(*x.shape) 
+    dw = x_reshaped.T.dot(dout)
+    db = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -87,7 +95,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -113,8 +121,8 @@ def relu_backward(dout, cache):
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    binary = (x > 0)
+    dx = dout * binary
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -772,8 +780,16 @@ def svm_loss(x, y):
     # TODO: Copy over your solution from A1.
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    N = x.shape[0]
+    correct_class_scores = x[np.arange(N), y] # N,
+    # np.array_equal(np.expand_dims(correct_class_scores, axis=1),correct_class_scores[:, np.newaxis])
+    margins = np.maximum(0, x - correct_class_scores[:, np.newaxis] + 1) # N x C
+    margins[np.arange(N), y] = 0 
+    loss = np.sum(margins) / N
+    binary = (margins > 0).astype(float)  # dW[:, j] += X[i]
+    binary[np.arange(N), y] = -np.sum(binary, axis=1) # dW[:, y[i]] -= X[i]
+    dx = binary / N
+    
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -802,8 +818,24 @@ def softmax_loss(x, y):
     # TODO: Copy over your solution from A1.
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    num_train = x.shape[0]
+    
+    # Shift the logits for numerical stability
+    shifted_logits = x - np.max(x, axis=1, keepdims=True)
+    
+    # Compute the softmax probabilities
+    Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True)
+    log_probs = shifted_logits - np.log(Z)
+    probs = np.exp(log_probs)
+    
+    # Compute the loss
+    correct_log_probs = -log_probs[np.arange(num_train), y]
+    loss = np.sum(correct_log_probs) / num_train
+    
+    # Compute the gradient
+    dx = probs.copy()
+    dx[np.arange(num_train), y] -= 1
+    dx /= num_train
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
