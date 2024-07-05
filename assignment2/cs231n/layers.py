@@ -3,7 +3,8 @@ import numpy as np
 
 
 def affine_forward(x, w, b):
-    """Computes the forward pass for an affine (fully connected) layer.
+    """
+    Computes the forward pass for an affine (fully-connected) layer.
 
     The input x has shape (N, d_1, ..., d_k) and contains a minibatch of N
     examples, where each example x[i] has shape (d_1, ..., d_k). We will
@@ -21,11 +22,13 @@ def affine_forward(x, w, b):
     """
     out = None
     ###########################################################################
-    # TODO: Copy over your solution from Assignment 1.                        #
+    # TODO: Implement the affine forward pass. Store the result in out. You   #
+    # will need to reshape the input into rows.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    N = x.shape[0]
+    x_reshaped = x.reshape(N, -1)
+    out = x_reshaped.dot(w)+b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -36,7 +39,8 @@ def affine_forward(x, w, b):
 
 
 def affine_backward(dout, cache):
-    """Computes the backward pass for an affine (fully connected) layer.
+    """
+    Computes the backward pass for an affine layer.
 
     Inputs:
     - dout: Upstream derivative, of shape (N, M)
@@ -53,11 +57,18 @@ def affine_backward(dout, cache):
     x, w, b = cache
     dx, dw, db = None, None, None
     ###########################################################################
-    # TODO: Copy over your solution from Assignment 1.                        #
+    # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    # dout N,M
+    # x_reshaped = N, D
+    # w = D,M
+    # b = M
+    N = x.shape[0]
+    x_reshaped = x.reshape(N, -1)
+    dx = dout.dot(w.T).reshape(*x.shape) 
+    dw = x_reshaped.T.dot(dout)
+    db = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -67,7 +78,8 @@ def affine_backward(dout, cache):
 
 
 def relu_forward(x):
-    """Computes the forward pass for a layer of rectified linear units (ReLUs).
+    """
+    Computes the forward pass for a layer of rectified linear units (ReLUs).
 
     Input:
     - x: Inputs, of any shape
@@ -78,11 +90,11 @@ def relu_forward(x):
     """
     out = None
     ###########################################################################
-    # TODO: Copy over your solution from Assignment 1.                        #
+    # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -93,7 +105,8 @@ def relu_forward(x):
 
 
 def relu_backward(dout, cache):
-    """Computes the backward pass for a layer of rectified linear units (ReLUs).
+    """
+    Computes the backward pass for a layer of rectified linear units (ReLUs).
 
     Input:
     - dout: Upstream derivatives, of any shape
@@ -104,11 +117,11 @@ def relu_backward(dout, cache):
     """
     dx, x = None, cache
     ###########################################################################
-    # TODO: Copy over your solution from Assignment 1.                        #
+    # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    binary = (x > 0)
+    dx = dout * binary
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -116,9 +129,9 @@ def relu_backward(dout, cache):
     ###########################################################################
     return dx
 
-
 def softmax_loss(x, y):
-    """Computes the loss and gradient for softmax classification.
+    """
+    Computes the loss and gradient for softmax classification.
 
     Inputs:
     - x: Input data, of shape (N, C) where x[i, j] is the score for the jth
@@ -133,17 +146,34 @@ def softmax_loss(x, y):
     loss, dx = None, None
 
     ###########################################################################
-    # TODO: Copy over your solution from Assignment 1.                        #
+    # TODO: Copy over your solution from A1.
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    num_train = x.shape[0]
+    
+    # Shift the logits for numerical stability
+    shifted_logits = x - np.max(x, axis=1, keepdims=True)
+    
+    # Compute the softmax probabilities
+    Z = np.sum(np.exp(shifted_logits), axis=1, keepdims=True)
+    log_probs = shifted_logits - np.log(Z)
+    probs = np.exp(log_probs)
+    
+    # Compute the loss
+    correct_log_probs = -log_probs[np.arange(num_train), y]
+    loss = np.sum(correct_log_probs) / num_train
+    
+    # Compute the gradient
+    dx = probs.copy()
+    dx[np.arange(num_train), y] -= 1
+    dx /= num_train
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
     return loss, dx
+
 
 
 def batchnorm_forward(x, gamma, beta, bn_param):
